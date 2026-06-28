@@ -15,8 +15,17 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
 subprojects {
     project.evaluationDependsOn(":app")
+    
+    // هذا الجزء هو الحل الجذري لإجبار كل المكتبات على استخدام SDK 36
+    afterEvaluate {
+        val android = extensions.findByName("android")
+        if (android != null) {
+            (android as com.android.build.gradle.BaseExtension).compileSdkVersion(36)
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
