@@ -1,10 +1,10 @@
 name: Build Android APK
 
 on:
-  workflow_dispatch: # بيعطيك زر عشان تشغل البناء يدوياً متى ما بدك
+  workflow_dispatch:
   push:
     branches:
-      - main # بيشتغل تلقائياً أول ما ترفع كود جديد
+      - main
 
 jobs:
   build:
@@ -14,7 +14,7 @@ jobs:
       - name: 📥 سحب كود المشروع
         uses: actions/checkout@v4
 
-      - name: ☕ تجهيز بيئة جافا (مطلوبة للأندرويد)
+      - name: ☕ تجهيز بيئة جافا
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
@@ -25,13 +25,14 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: 🔐 حقن مفاتيح الأمان (إنشاء ملف .env)
+      - name: 🔐 حقن مفاتيح الأمان
         run: |
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 
-      - name: 📦 تنزيل الحزم والمكاتب
-        run: flutter pub get
+      # التعديل هنا: استخدام upgrade بدلاً من get لتحديث ملف الـ lock
+      - name: 📦 تحديث الحزم إجبارياً
+        run: flutter pub upgrade --major-versions
 
       - name: 🛠️ بناء تطبيق الأندرويد (APK)
         run: flutter build apk --release
