@@ -5,7 +5,6 @@ version: 1.0.0+1
 
 environment:
   sdk: ^3.5.0
-
 dependencies:
   flutter:
     sdk: flutter
@@ -13,20 +12,21 @@ dependencies:
     sdk: flutter
   supabase_flutter: ^2.5.0
   provider: ^6.1.2
-  flutter_dotenv: ^5.1.0
+  flutter_dotenv: ^6.0.1
   table_calendar: ^3.1.2
-  fl_chart: ^0.68.0
-  flutter_local_notifications: ^17.2.1
+  fl_chart: ^1.2.0
+  flutter_local_notifications: ^22.0.1      # تحديث هام
   intl: 0.20.2
-  font_awesome_flutter: ^10.7.0
+  font_awesome_flutter: ^11.0.0
   excel: ^4.0.0
-  file_picker: ^8.0.0
-
+  file_picker: ^12.0.0-beta.7                      # تحديث هام جداً
+  device_info_plus: ^13.2.0                 # تحديث هام
+  package_info_plus: ^10.2.0                # تحديث هام
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
-  flutter_launcher_icons: "^0.13.1"
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
