@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="تطبيق المعهد التقاني للحاسوب - درعا">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="المعهد التقاني">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>المعهد التقاني للحاسوب - درعا</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- تجنب خطأ Passkeys Web SDK -->
+  <script>
+    window.CorbadoPasskeys = {
+      init: function() {},
+      isAvailable: function() { return false; }
+    };
+  </script>
+</head>
+<body>
+  <script src="https://github.com/corbado/flutter-passkeys/releases/download/2.4.0/bundle.js"></script>
+  <script src="flutter_bootstrap.js"></script>
+</body>
+</html>
