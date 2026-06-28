@@ -17,13 +17,15 @@ subprojects {
 }
 
 subprojects {
-    project.evaluationDependsOn(":app")
-    
-    // هذا الجزء هو الحل الجذري لإجبار كل المكتبات على استخدام SDK 36
-    afterEvaluate {
-        val android = extensions.findByName("android")
-        if (android != null) {
-            (android as com.android.build.gradle.BaseExtension).compileSdkVersion(36)
+    // هذه الطريقة هي الاحترافية لتجنب خطأ التوقيت (Already evaluated)
+    plugins.withId("com.android.application") {
+        configure<com.android.build.gradle.BaseExtension> {
+            compileSdkVersion(36)
+        }
+    }
+    plugins.withId("com.android.library") {
+        configure<com.android.build.gradle.BaseExtension> {
+            compileSdkVersion(36)
         }
     }
 }
