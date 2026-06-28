@@ -33,10 +33,10 @@ compileOptions {
         }
     }
 }
-
 kotlin {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        // عدلنا JVM_17 لـ JVM_1_8 عشان يطابق إعدادات الجافا
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
     }
 }
 
