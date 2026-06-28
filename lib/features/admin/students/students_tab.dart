@@ -89,7 +89,7 @@ class _AdminStudentsTabState extends State<AdminStudentsTab> {
     }
 
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx'],
         withData: true, 
@@ -527,7 +527,7 @@ class _AdminStudentsTabState extends State<AdminStudentsTab> {
                 setState(() => _isLoading = false);
               }
             },
-            
+
             backgroundColor: const Color(0xFF3B82F6), // Blue
             foregroundColor: Colors.white,
             icon: const Icon(Icons.vpn_key_rounded, size: 20),

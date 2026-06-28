@@ -65,20 +65,24 @@ class _AdminGradesTabState extends State<AdminGradesTab> {
     );
   }
 
-  // ==================== محرك استيراد العلامات (تمت إضافة حقل اسم الطالب للإكسل) ====================
   Future<void> _importGradesFromExcel() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      // التأكد من استيراد المكتبة الصحيحة في أعلى الملف:
+      // import 'package:file_picker/file_picker.dart';
+      
+      FilePickerResult? result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx'],
-        withData: true, 
       );
 
-      if (result != null && result.files.single.bytes != null) {
+      // هنا التعديل الجوهري: استخدام readAsBytes بدلاً من bytes
+      if (result != null && result.files.single.xFile != null) {
         setState(() => _isLoading = true);
         
-        final bytes = result.files.single.bytes!;
+        // استخدام readAsBytes (وهي عملية غير متزامنة، لذا نحتاج await)
+        final bytes = await result.files.single.xFile.readAsBytes();
         var excel = Excel.decodeBytes(bytes);
+        
         List<Map<String, dynamic>> gradesList = [];
         int skippedCount = 0;
 
@@ -89,22 +93,19 @@ class _AdminGradesTabState extends State<AdminGradesTab> {
           var row = sheet.rows[i];
           if (row.isEmpty || row[0]?.value == null) continue;
 
-          // 0: الرقم الجامعي | 1: اسم الطالب (للعرض بالإكسل فقط) | 2: المادة | 3: الفصل
+          // باقي الكود كما هو تماماً
           final rawStudentId = row[0]?.value?.toString().trim() ?? '';
           
           final subject = row.length > 2 ? row[2]?.value?.toString().trim() ?? 'مادة غير محددة' : 'مادة غير محددة';
           final semester = row.length > 3 ? row[3]?.value?.toString().trim() ?? 'الفصل الأول' : 'الفصل الأول';
           
-          // 4: علامة العملي | 5: عظمى العملي
           final pracMark = double.tryParse(row.length > 4 ? row[4]?.value?.toString() ?? '0' : '0') ?? 0.0;
           final pracMax = double.tryParse(row.length > 5 ? (row[5]?.value?.toString() ?? '30') : '30') ?? 30.0;
 
-          // 6: علامة النظري (يقبل الفراغ) | 7: عظمى النظري
           final rawTheoValue = row.length > 6 ? row[6]?.value?.toString().trim() : null;
           final double? theoMark = (rawTheoValue == null || rawTheoValue.isEmpty) ? null : double.tryParse(rawTheoValue);
           final theoMax = double.tryParse(row.length > 7 ? (row[7]?.value?.toString() ?? '70') : '70') ?? 70.0;
 
-          // 8: حد النجاح
           final passingMin = double.tryParse(row.length > 8 ? (row[8]?.value?.toString() ?? '60') : '60') ?? 60.0;
 
           final computedTotal = pracMark + (theoMark ?? 0.0);
@@ -114,7 +115,6 @@ class _AdminGradesTabState extends State<AdminGradesTab> {
               ? 'غير مكتمل' 
               : (computedTotal >= passingMin ? 'ناجح' : 'راسب');
 
-          // 9: الحالة (اختياري)
           final finalStatus = row.length > 9 && row[9]?.value != null && row[9]!.value!.toString().trim().isNotEmpty
               ? row[9]!.value!.toString().trim()
               : autoStatus;
@@ -166,7 +166,8 @@ class _AdminGradesTabState extends State<AdminGradesTab> {
       if (mounted) _showSnackBar('حدث خطأ أثناء قراءة ملف الإكسل: $e', isError: true);
       setState(() => _isLoading = false);
     }
-  }
+  }    
+  
 
   UserModel? _getSafeStudent() {
     if (_selectedStudent == null) return null;
