@@ -1,0 +1,43 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch: # بيعطيك زر عشان تشغل البناء يدوياً متى ما بدك
+  push:
+    branches:
+      - main # بيشتغل تلقائياً أول ما ترفع كود جديد
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 سحب كود المشروع
+        uses: actions/checkout@v4
+
+      - name: ☕ تجهيز بيئة جافا (مطلوبة للأندرويد)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: 🐦 تجهيز بيئة فلاتر
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: 🔐 حقن مفاتيح الأمان (إنشاء ملف .env)
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: 📦 تنزيل الحزم والمكاتب
+        run: flutter pub get
+
+      - name: 🛠️ بناء تطبيق الأندرويد (APK)
+        run: flutter build apk --release
+
+      - name: 📤 تصدير التطبيق الجاهز للتحميل
+        uses: actions/upload-artifact@v4
+        with:
+          name: Damascus-Institute-App-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
