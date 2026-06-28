@@ -46,3 +46,11 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
 }
+subprojects {
+    afterEvaluate {
+        val android = extensions.findByName("android")
+        if (android != null) {
+            (android as com.android.build.gradle.BaseExtension).compileSdkVersion(36)
+        }
+    }
+}
