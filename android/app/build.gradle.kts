@@ -6,9 +6,9 @@ plugins {
 
 android {
     namespace = "com.example.damascus_institute"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
-compileOptions {
+       compileSdk = 36 // إجبار المشروع على استخدام API 36 لتلبية متطلبات المكتبات الجديدة
+     ndkVersion = flutter.ndkVersion
+         compileOptions {
         isCoreLibraryDesugaringEnabled = true // <--- ضيف هاد السطر السحري
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
