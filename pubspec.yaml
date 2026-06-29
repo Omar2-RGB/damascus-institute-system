@@ -5,6 +5,7 @@ version: 1.0.0+1
 
 environment:
   sdk: ^3.5.0
+
 dependencies:
   flutter:
     sdk: flutter
@@ -15,13 +16,14 @@ dependencies:
   flutter_dotenv: ^6.0.1
   table_calendar: ^3.1.2
   fl_chart: ^1.2.0
-  flutter_local_notifications: ^22.0.1      # تحديث هام
+  flutter_local_notifications: ^17.2.4      # تم التعديل لتوافق النظام
   intl: 0.20.2
   font_awesome_flutter: ^11.0.0
   excel: ^4.0.0
-  file_picker: ^8.3.7
-  device_info_plus: ^13.2.0                 # تحديث هام
-  package_info_plus: ^10.2.0                # تحديث هام
+  file_picker: ^8.3.7                       # النسخة المستقرة
+  device_info_plus: ^12.4.0                 # تم التعديل لتوافق النظام
+  package_info_plus: ^9.0.1                 # تم التعديل لتوافق النظام
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
