@@ -30,9 +30,11 @@ jobs:
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
 
-      # التعديل هنا: استخدام upgrade بدلاً من get لتحديث ملف الـ lock
-      - name: 📦 تحديث الحزم إجبارياً
-        run: flutter pub upgrade --major-versions
+      # التعديل هنا: سحب الحزم كما هي بدون تحديثات عشوائية
+      - name: 📦 تنظيف وتجهيز الحزم
+        run: |
+          flutter clean
+          flutter pub get
 
       - name: 🛠️ بناء تطبيق الأندرويد (APK)
         run: flutter build apk --release
