@@ -4,7 +4,7 @@ import 'package:excel/excel.dart' hide Border;
 import '../../../../data/services/supabase_service.dart';
 import '../../../../data/models/user_model.dart';
 import '../../../../core/theme/app_colors.dart'; 
-
+import 'dart:io';
 class AdminGradesTab extends StatefulWidget {
   const AdminGradesTab({super.key});
 
@@ -64,111 +64,133 @@ class _AdminGradesTabState extends State<AdminGradesTab> {
       ),
     );
   }
-
+// ==================== محرك استيراد قالب المعهد التقاني (درعا) المعتمد ====================
   Future<void> _importGradesFromExcel() async {
     try {
-      // التأكد من استيراد المكتبة الصحيحة في أعلى الملف:
-      // import 'package:file_picker/file_picker.dart';
-      
-      FilePickerResult? result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['xlsx'],
-      );
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+     type: FileType.custom,
+     allowedExtensions: ['xlsx'],
+   );
 
-      // هنا التعديل الجوهري: استخدام readAsBytes بدلاً من bytes
-      if (result != null && result.files.single.xFile != null) {
-        setState(() => _isLoading = true);
-        
-        // استخدام readAsBytes (وهي عملية غير متزامنة، لذا نحتاج await)
-        final bytes = await result.files.single.xFile.readAsBytes();
-        var excel = Excel.decodeBytes(bytes);
-        
+   // نعتمد على path بدلاً من xFile أو bytes
+   if (result != null && result.files.single.path != null) {
+     setState(() => _isLoading = true);
+
+     // قراءة الملف عبر dart:io الأساسية
+     final file = File(result.files.single.path!);
+     final bytes = await file.readAsBytes();
+     var excel = Excel.decodeBytes(bytes);
         List<Map<String, dynamic>> gradesList = [];
         int skippedCount = 0;
 
         var table = excel.tables.keys.first;
         var sheet = excel.tables[table]!;
 
-        for (var i = 1; i < sheet.rows.length; i++) {
+        // 1. --- الصيّاد الذكي للترويسة (لقراءة اسم المادة والفصل تلقائياً من فوق) ---
+        String detectedSubject = 'مادة غير محددة';
+        String detectedSemester = 'الفصل الدراسي الثاني';
+        double detectedPracMax = 40.0;
+
+        // تابع داخلي يبحث في أول 10 أسطر عن كلمة معينة ويسحب القيمة التي بجانبها
+        String searchHeader(String keyword, String fallback) {
+          for (int r = 0; r < 10 && r < sheet.rows.length; r++) {
+            final row = sheet.rows[r];
+            for (int c = 0; c < row.length; c++) {
+              final text = row[c]?.value?.toString().trim() ?? '';
+              if (text.contains(keyword)) {
+                // حالة أ: إذا كانت مكتوبة بخلية واحدة (مثال: "اسم المادة : برمجة 1")
+                if (text.contains(':')) {
+                  final parts = text.split(':');
+                  if (parts.length > 1 && parts.last.trim().isNotEmpty) {
+                    return parts.last.trim();
+                  }
+                }
+                // حالة ب: مكتوبة بالخلية التي جنبها مباشرة (يمين أو يسار حسب لغة الأوفيس)
+                if (c + 1 < row.length && row[c + 1]?.value != null) {
+                  final val = row[c + 1]!.value!.toString().trim();
+                  if (val.isNotEmpty && val != ':') return val;
+                }
+                if (c - 1 >= 0 && row[c - 1]?.value != null) {
+                  final val = row[c - 1]!.value!.toString().trim();
+                  if (val.isNotEmpty && val != ':') return val;
+                }
+              }
+            }
+          }
+          return fallback;
+        }
+
+        detectedSubject = searchHeader('اسم المادة', 'برمجة 1');
+        detectedSemester = searchHeader('الفصل الدراسي', 'الفصل الدراسي الثاني');
+        
+        final maxStr = searchHeader('النهاية العظمى', '40');
+        detectedPracMax = double.tryParse(maxStr) ?? 40.0;
+
+        // 2. --- قراءة جدول الطلاب (يبدأ الشفط فوراً عند أول رقم امتحاني حقيقي) ---
+        for (var i = 0; i < sheet.rows.length; i++) {
           var row = sheet.rows[i];
-          if (row.isEmpty || row[0]?.value == null) continue;
+          if (row.length < 8) continue; // تخطي الأسطر التالفة أو القصيرة
 
-          // باقي الكود كما هو تماماً
-          final rawStudentId = row[0]?.value?.toString().trim() ?? '';
-          
-          final subject = row.length > 2 ? row[2]?.value?.toString().trim() ?? 'مادة غير محددة' : 'مادة غير محددة';
-          final semester = row.length > 3 ? row[3]?.value?.toString().trim() ?? 'الفصل الأول' : 'الفصل الأول';
-          
-          final pracMark = double.tryParse(row.length > 4 ? row[4]?.value?.toString() ?? '0' : '0') ?? 0.0;
-          final pracMax = double.tryParse(row.length > 5 ? (row[5]?.value?.toString() ?? '30') : '30') ?? 30.0;
+          // العمود [1] هو (الرقم الامتحاني / الرقم الجامعي) حسب جدول المعهد
+          final rawIdCell = row[1]?.value?.toString().trim() ?? '';
 
-          final rawTheoValue = row.length > 6 ? row[6]?.value?.toString().trim() : null;
-          final double? theoMark = (rawTheoValue == null || rawTheoValue.isEmpty) ? null : double.tryParse(rawTheoValue);
-          final theoMax = double.tryParse(row.length > 7 ? (row[7]?.value?.toString() ?? '70') : '70') ?? 70.0;
+          // *** الفلتر السحري *** 
+          // أي سطر عموده الثاني ليس رقماً (مثل سطر العناوين "الرقم الامتحاني" أو ترويسة جامعة دمشق فوق) سيتخطاه فوراً
+          if (int.tryParse(rawIdCell) == null) continue;
 
-          final passingMin = double.tryParse(row.length > 8 ? (row[8]?.value?.toString() ?? '60') : '60') ?? 60.0;
+          final rawStudentId = rawIdCell;
 
-          final computedTotal = pracMark + (theoMark ?? 0.0);
-          final computedMax = pracMax + theoMax;
-
-          final String autoStatus = theoMark == null 
-              ? 'غير مكتمل' 
-              : (computedTotal >= passingMin ? 'ناجح' : 'راسب');
-
-          final finalStatus = row.length > 9 && row[9]?.value != null && row[9]!.value!.toString().trim().isNotEmpty
-              ? row[9]!.value!.toString().trim()
-              : autoStatus;
+          // العمود [7] هو (الدرجة النهائية رقماً) وهو يمثل المجموع الكلي لأعمال الطالب (24+8+8)
+          final pracMark = double.tryParse(row[7]?.value?.toString() ?? '0') ?? 0.0;
 
           UserModel? matchedStudent;
           try {
             matchedStudent = _students.firstWhere((s) => s.studentId == rawStudentId);
           } catch (_) {
             skippedCount++;
-            continue; 
+            continue; // طالب مو مسجل بقاعدة بياناتنا، تخطاه بصمت
           }
 
           gradesList.add({
-            'student_id': matchedStudent.id, 
-            'subject': subject,
-            'semester': semester,
+            'student_id': matchedStudent.id,
+            'subject': detectedSubject,
+            'semester': detectedSemester,
             'practical_mark': pracMark,
-            'practical_max': pracMax,
-            'theoretical_mark': theoMark, 
-            'theoretical_max': theoMax,
-            'passing_min': passingMin,
-            'grade': computedTotal,
-            'max_grade': computedMax,
-            'status': finalStatus, 
+            'practical_max': detectedPracMax,
+            'theoretical_mark': null, // لسا ما قدموا النظري
+            'theoretical_max': 100.0 - detectedPracMax, // إكمال المئة تلقائياً (مثلاً 60)
+            'passing_min': 60.0,
+            'grade': pracMark,
+            'max_grade': 100.0,
+            'status': 'غير مكتمل', // الحالة معلقة لبين ما ينرصد النظري
           });
         }
-        
+
         if (gradesList.isEmpty) {
-          if (mounted) _showSnackBar('الملف فارغ أو لم يتم العثور على أرقام جامعية مطابقة', isError: true);
+          if (mounted) _showSnackBar('الملف لا يحتوي على أرقام امتحانية مطابقة لطلاب النظام!', isError: true);
           setState(() => _isLoading = false);
           return;
         }
 
         await _supabaseService.bulkAddGrades(gradesList);
-        
+
         if (_selectedStudent != null) {
           await _loadGrades(_selectedStudent!.id);
         } else {
           setState(() => _isLoading = false);
         }
-        
+
         if (mounted) {
           _showSnackBar(
-            'تم رصد ${gradesList.length} علامة بنجاح! 🚀${skippedCount > 0 ? '\nتم تخطي $skippedCount سجل (أرقام جامعية غير موجودة)' : ''}'
+            'تم رصد ${gradesList.length} علامة لمادة "$detectedSubject" بنجاح! 🚀${skippedCount > 0 ? '\n(تم تخطي $skippedCount أسطر لطلاب غير معرفين بالنظام)' : ''}'
           );
         }
       }
     } catch (e) {
-      if (mounted) _showSnackBar('حدث خطأ أثناء قراءة ملف الإكسل: $e', isError: true);
+      if (mounted) _showSnackBar('حدث خطأ أثناء معالجة قالب المعهد: $e', isError: true);
       setState(() => _isLoading = false);
     }
-  }    
-  
-
+  }
   UserModel? _getSafeStudent() {
     if (_selectedStudent == null) return null;
     try {

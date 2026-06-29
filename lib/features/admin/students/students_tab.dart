@@ -89,7 +89,7 @@ class _AdminStudentsTabState extends State<AdminStudentsTab> {
     }
 
     try {
-      FilePickerResult? result = await FilePicker.pickFiles(
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx'],
         withData: true, 
