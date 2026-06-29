@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+// أضفنا as fp في النهاية
+import 'package:file_picker/file_picker.dart' as fp;
 import 'package:excel/excel.dart' hide Border;
 import '../../../../data/services/supabase_service.dart';
 import '../../../../data/models/user_model.dart';
@@ -67,19 +68,21 @@ class _AdminGradesTabState extends State<AdminGradesTab> {
 // ==================== محرك استيراد قالب المعهد التقاني (درعا) المعتمد ====================
   Future<void> _importGradesFromExcel() async {
     try {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-     type: FileType.custom,
-     allowedExtensions: ['xlsx'],
-   );
+  // استخدمنا fp. قبل كل كلاس يخص المكتبة
+      fp.FilePickerResult? result = await fp.FilePicker.platform.pickFiles(
+        type: fp.FileType.custom,
+        allowedExtensions: ['xlsx'],
+      );
 
-   // نعتمد على path بدلاً من xFile أو bytes
-   if (result != null && result.files.single.path != null) {
-     setState(() => _isLoading = true);
+      // التأكد من المسار باستخدام dart:io كما اتفقنا
+      if (result != null && result.files.single.path != null) {
+        setState(() => _isLoading = true);
 
-     // قراءة الملف عبر dart:io الأساسية
-     final file = File(result.files.single.path!);
-     final bytes = await file.readAsBytes();
-     var excel = Excel.decodeBytes(bytes);
+        final file = File(result.files.single.path!);
+        final bytes = await file.readAsBytes();
+        var excel = Excel.decodeBytes(bytes);
+        
+        // ... (باقي الكود الخاص بقراءة الإكسل كما هو)
         List<Map<String, dynamic>> gradesList = [];
         int skippedCount = 0;
 

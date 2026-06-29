@@ -1,13 +1,14 @@
 import 'dart:math'; // <--- مكتبة الرياضيات لتوليد المعرفات العشوائية
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; 
-import 'package:file_picker/file_picker.dart'; 
+// أضفنا as fp في النهاية
+import 'package:file_picker/file_picker.dart' as fp;
 import 'package:excel/excel.dart' hide Border; // <--- حل مشكلة تعارض الأسماء
 import '../../../../data/services/supabase_service.dart';
 import '../../../../data/models/user_model.dart';
 import '../../../../core/theme/app_colors.dart'; 
 import 'AdminAttendanceTab.dart'; 
-
+import 'dart:io';
 class AdminStudentsTab extends StatefulWidget {
   const AdminStudentsTab({super.key});
 
@@ -89,17 +90,21 @@ class _AdminStudentsTabState extends State<AdminStudentsTab> {
     }
 
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
+     // استخدمنا fp. قبل كل كلاس يخص المكتبة
+      fp.FilePickerResult? result = await fp.FilePicker.platform.pickFiles(
+        type: fp.FileType.custom,
         allowedExtensions: ['xlsx'],
-        withData: true, 
       );
 
-      if (result != null && result.files.single.bytes != null) {
+      // التأكد من المسار باستخدام dart:io كما اتفقنا
+      if (result != null && result.files.single.path != null) {
         setState(() => _isLoading = true);
-        
-        final bytes = result.files.single.bytes!;
+
+        final file = File(result.files.single.path!);
+        final bytes = await file.readAsBytes();
         var excel = Excel.decodeBytes(bytes);
+        
+        // ... (باقي الكود الخاص بقراءة الإكسل كما هو)
         List<Map<String, dynamic>> studentsList = [];
 
         var table = excel.tables.keys.first;
