@@ -17,17 +17,7 @@ subprojects {
 }
 
 subprojects {
-    // هذه الطريقة هي الاحترافية لتجنب خطأ التوقيت (Already evaluated)
-    plugins.withId("com.android.application") {
-        configure<com.android.build.gradle.BaseExtension> {
-            compileSdkVersion(36)
-        }
-    }
-    plugins.withId("com.android.library") {
-        configure<com.android.build.gradle.BaseExtension> {
-            compileSdkVersion(36)
-        }
-    }
+    project.evaluationDependsOn(":app")
 }
 
 tasks.register<Delete>("clean") {
