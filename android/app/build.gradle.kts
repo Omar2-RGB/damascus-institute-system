@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("kotlin-android") // <--- هاد السطر هو اللي كان ناقص وعم يعمل المشكلة!
     id("dev.flutter.flutter-gradle-plugin")
 }
 
