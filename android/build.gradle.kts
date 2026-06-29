@@ -14,16 +14,21 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
-    
-    // هذا الكود الجبار هو الذي يحمينا من تعارض المكتبات مع SDK 36
-    plugins.withId("com.android.application") {
-        configure<com.android.build.gradle.BaseExtension> {
-            compileSdkVersion(36)
-        }
-    }
-    plugins.withId("com.android.library") {
-        configure<com.android.build.gradle.BaseExtension> {
-            compileSdkVersion(36)
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+// الكود الفولاذي لرفع الـ SDK لـ 36 بدون أخطاء التوقيت
+subprojects {
+    if (state.executed) {
+        val android = extensions.findByName("android") as? com.android.build.gradle.BaseExtension
+        android?.compileSdkVersion(36)
+    } else {
+        afterEvaluate {
+            val android = extensions.findByName("android") as? com.android.build.gradle.BaseExtension
+            android?.compileSdkVersion(36)
         }
     }
 }

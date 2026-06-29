@@ -19,7 +19,7 @@ dependencies:
   intl: 0.20.2
   font_awesome_flutter: ^11.0.0
   excel: ^4.0.0
-  file_picker: ^3.0.4                      # تحديث هام جداً
+  file_picker: ^8.3.7
   device_info_plus: ^13.2.0                 # تحديث هام
   package_info_plus: ^10.2.0                # تحديث هام
 dev_dependencies:
